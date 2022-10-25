@@ -20,10 +20,10 @@ class Prey :
         ptype = -1 #1 if predator, -1 for prey
         age = 0
         epsilon = 0.2
- 
+
         def __init__(self, x_position, y_position, ID, lastAte, father, reproduction_age,
                      death_rate, reproduction_rate, weights, learning_rate,discount_factor, hunger_minimum):
- 
+
             self.x_position = x_position
             self.y_position = y_position
             self.ID = ID
@@ -37,7 +37,7 @@ class Prey :
             self.discount_factor = discount_factor
             self.hunger_minimum = hunger_minimum
             self.q = 0
-  
+
         def compute_how_many(self,matrix):
             """
             Returns the number of the different agents for each neighbor cell
@@ -60,7 +60,7 @@ class Prey :
                     iMoore += 1
             return how_many
 
-        def perceive(self,x,y,matrix): 
+        def perceive(self,x,y,matrix):
             """
             Returns the features for a position x,y as a matrix 9x3
             """
@@ -88,7 +88,7 @@ class Prey :
                         else:
                             how_many[2][iMoore]+= 1
                     iMoore +=1
- 
+
             # Calculate features. Note: this is for a prey
             if nr_pred != 0:
                 features[0]=sum(how_many[2][:])/nr_pred #pred
@@ -102,10 +102,10 @@ class Prey :
                 features[2]=sum(how_many[0][:])/nr_grass # grass
             else:
                 features[2] = 0
- 
+
             if sum(how_many[2][:])==0:
                 features[3:12]=0
-            else:    
+            else:
                 features[3]=how_many[2][0]/sum(how_many[2][:])
                 features[4]=how_many[2][1]/sum(how_many[2][:])
                 features[5]=how_many[2][2]/sum(how_many[2][:])
@@ -115,7 +115,7 @@ class Prey :
                 features[9]=how_many[2][6]/sum(how_many[2][:])
                 features[10]=how_many[2][7]/sum(how_many[2][:])
                 features[11]=how_many[2][8]/sum(how_many[2][:])
- 
+
             return features
 
         def Cells_Evaluation(self,matrix):
@@ -130,7 +130,7 @@ class Prey :
                 for i_y_Moore in [-1,0,1] :
                     x_eval = np.mod(x+i_x_Moore,matrix.xDim) # eval case 0 if agent in case 50
                     y_eval = np.mod(y+i_y_Moore,matrix.yDim)
-                    f_i = self.perceive(x_eval,y_eval,matrix) 
+                    f_i = self.perceive(x_eval,y_eval,matrix)
                     cell_score = np.dot(f_i,self.weights)
                     score[0][iMoore]=x_eval #gives the score and the absolute position
                     score[1][iMoore]=y_eval
@@ -157,7 +157,7 @@ class Prey :
                 self.q = np.dot(features, self.weights)
             new_position = np.array([x_new, y_new])
             return new_position
- 
+
         def Aging(self, i):
             self.age += 1
             self.epsilon = 1 / i
@@ -167,9 +167,9 @@ class Prey :
                 self.learning_rate = 0
             self.lastAte += 1
             return
- 
+
 #---------------------------Learning part-------------------------------#
-        def Get_Reward(self,matrix): 
+        def Get_Reward(self,matrix):
             """
             opponent :number of the other species type within the agent’s Moore
             neighborhood normalized by the number of total
@@ -185,23 +185,23 @@ class Prey :
             opponent = feature_wanted
             same = how_many[2][4]>0
             reward = opponent*type_animal + 2*same*type_animal
- 
+
             return reward
- 
+
         def Get_QFunction(self,features):
             weights = self.weights
- 
+
             Q = 0
             for i in range(len(weights)):
                 Q = Q + weights[i]*features[i]
- 
+
             return Q
- 
+
         def Update_Weight(self, reward, matrix, Q_value):
             weights = self.weights
             learning_rate = self.learning_rate
             discount_factor = self.discount_factor
- 
+
             #Compute the Q'-table:
             Q_prime = []
             for i in [-1,0,1]:
@@ -210,7 +210,7 @@ class Prey :
                     y_target = (self.y_position+j)%matrix.yDim
                     features = self.perceive(x_target,y_target,matrix)
                     Q_prime.append(self.Get_QFunction(features))
- 
+
             #Update the weights:
             Q_prime_max = max(Q_prime)
             for i in range(0,len(weights)):
@@ -218,13 +218,13 @@ class Prey :
                     c = 9/(matrix.xDim*matrix.yDim)
                 else:
                     c = 1/9
-                    
+
                 w = weights[i]
                 f = features[i]
                 f = np.exp(-0.5*(f-c)**2)
- 
+
                 weights[i] = w + learning_rate*(reward +discount_factor*Q_prime_max - Q_value)*f
- 
+
             self.weights= weights
             return
 

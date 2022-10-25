@@ -235,8 +235,9 @@ class Grid:
         plt.scatter(xs[1], ys[1], color='b')
         plt.scatter(xs[0], ys[0], color='r')
         plt.axis([-1, self.xDim, -1, self.yDim])
-        plt.pause(0.01)
+        plt.pause(0.1)
         plt.draw()
+        # plt.show()
 
     def getGrassCoords(self, x, y):
         availablePositions = []

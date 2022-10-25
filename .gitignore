@@ -1,0 +1,7 @@
+PredatorList.txt
+PreyList.txt
+GrassList.txt
+
+venv
+.idea
+__pycache__

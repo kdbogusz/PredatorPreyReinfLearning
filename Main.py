@@ -1,6 +1,7 @@
 from Grid import Grid
 from ExtractInfo import ExtractInfo
 import argparse
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -65,6 +66,7 @@ if __name__ == '__main__':
     for i in range(1, numLearningIterations):
         numAgents = grid.update(True, i)
         print("Iteration: %d. Pred: %d, prey: %d, grass: %d, avg. prey death age: %.2f, avg. pred death age: %.2f" % (i, numAgents[0], numAgents[1], numAgents[2], numAgents[3], numAgents[4]))
+        grid.draw()
         preyV.append(numAgents[0])
         predV.append(numAgents[1])
         grassV.append(numAgents[2])
