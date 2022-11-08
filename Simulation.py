@@ -8,7 +8,7 @@ from GP_Agents import Prey, Predator
 from matplotlib import pyplot as plt
 
 
-def run_simulation(prey_function):
+def run_simulation(prey_function, print_move=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--gridDim', default=50, type=int, help='Size of the grid')
     parser.add_argument('--nPredators', default=100, type=int, help='Number of initial predators')
@@ -63,12 +63,10 @@ def run_simulation(prey_function):
 
     grid = Grid(xDim, yDim, nPredators, nPrey, nGrass, learningRate, discountFactor,
                 predRepAge, predDeathRate, predRepRate, preyRepAge, preyDeathRate, preyRepRate, mPred, mPrey,
-                grassRepRate, grassConsRate, prey_function)
-
-    numAgents = nPredators + nPrey + nGrass
+                grassRepRate, grassConsRate, prey_function, print_move)
 
     for i in range(1, numLearningIterations):
-        numAgents = grid.update(True, i)
+        numAgents = grid.update(True, i, ["prey"])
         preyV.append(numAgents[0])
         predV.append(numAgents[1])
         grassV.append(numAgents[2])
@@ -76,13 +74,13 @@ def run_simulation(prey_function):
         predLastAteV.append(predLastAteP)
         preyLastAteV.append(preyLastAteP)
         ratioV.append(ratio)
-        a = ExtractInfo(grid)
-        WeightsInfo.append(a)
+        # a = ExtractInfo(grid)
+        # WeightsInfo.append(a)
 
     i = numLearningIterations
 
     while numAgents[0] > 0 and i <= totalNumIterations:
-        numAgents = grid.update(False, i)
+        numAgents = grid.update(False, i, ["prey"])
         i += 1
         preyV.append(numAgents[0])
         predV.append(numAgents[1])
@@ -98,7 +96,7 @@ def run_simulation(prey_function):
 class Grid:
     def __init__(self, xDim, yDim, nPredators, nPrey, nGrass, learningRate, discountFactor,
                  predRepAge, predDeathRate, predRepRate, preyRepAge, preyDeathRate, preyRepRate,
-                 mPred, mPrey, grassRepRate, grassConsRate, prey_function):
+                 mPred, mPrey, grassRepRate, grassConsRate, prey_function, print_move):
         self.xDim = xDim
         self.yDim = yDim
         self.nPredators = nPredators
@@ -124,6 +122,7 @@ class Grid:
         self.numPred = nPredators
         self.numPrey = nPrey
         self.numGrass = nGrass
+        self.print_move = print_move
         for i in range(nPredators):
             initWeights = np.random.rand(12)*6 - 3
             x = random.randint(0, xDim - 1)
@@ -155,7 +154,7 @@ class Grid:
             self.agentList.append([self.ID, x, y, 2])
             self.ID += 1
 
-    def update(self, learning, i):
+    def update(self, learning, i, simulated_agents):
         random.shuffle(self.agentList)
         predLastAte=0
         preyLastAte=0
@@ -227,7 +226,7 @@ class Grid:
                 preyLastAte =preyLastAte + agent.lastAte
                 agent.Aging(i)
                 #Monving and learning
-                [newCoordsX, newCoordsY] = agent.Change_Position(self)
+                [newCoordsX, newCoordsY] = agent.Change_Position(self, self.print_move)
                 newCoordsX = int(newCoordsX)
                 newCoordsY = int(newCoordsY)
                 self.grid[x][y].remove(agent)
@@ -238,7 +237,7 @@ class Grid:
                 agentInfo[2] = newCoordsY
                 x = newCoordsX
                 y = newCoordsY
-                if learning:
+                if learning and "prey" not in simulated_agents:
                     r=agent.Get_Reward(self)
                     agent.Update_Weight(r, self, agent.q)
                 eatenID = agent.Eat(self.grid[x][y])
