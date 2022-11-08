@@ -7,6 +7,8 @@ from GrassAgent import *
 from GP_Agents import Prey, Predator
 from matplotlib import pyplot as plt
 
+def fitness_function(prey_function):
+    return np.mean([run_simulation(prey_function) for _ in range(3)])
 
 def run_simulation(prey_function, print_move=False):
     parser = argparse.ArgumentParser()

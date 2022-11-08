@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from Simulation import run_simulation
+from Simulation import fitness_function
 
 def plot_logbook(logbook):
     min_values = logbook.select("min")
@@ -29,14 +29,14 @@ def plot_tree(nodes, edges, labels):
     plt.show()
 
 def sequence3(input1, input2, input3):
-        for input in [input1, input2, input3]:
-            if input == False:
-                return False
-            elif input == True:
-                continue
-            else:
-                return input
-        return True
+    for input in [input1, input2, input3]:
+        if input == False:
+            return False
+        elif input == True:
+            continue
+        else:
+            return input
+    return True
 
 def sequence2(input1, input2):
     for input in [input1, input2]:
@@ -54,7 +54,7 @@ def selector2(input1, input2):
             continue
         else:
             return input
-    return 'do_nothing'
+    return False
 
 def selector3(input1, input2, input3):
     for input in [input1, input2, input3]:
@@ -62,7 +62,7 @@ def selector3(input1, input2, input3):
             continue
         else:
             return input
-    return 'do_nothing'
+    return False
 
 if __name__ == '__main__':
     pset = gp.PrimitiveSet("main", 2)
@@ -76,7 +76,6 @@ if __name__ == '__main__':
     pset.renameArguments(ARG1="predator_nearby")
     pset.addTerminal('go_to_food')
     pset.addTerminal('go_from_predator')
-    pset.addTerminal('do_nothing')
 
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
     creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
@@ -92,7 +91,7 @@ if __name__ == '__main__':
     def eval_prey(individual):
         routine = gp.compile(individual, pset)
 
-        res = run_simulation(routine)
+        res = fitness_function(routine)
 
         return res,
 
@@ -103,7 +102,7 @@ if __name__ == '__main__':
     toolbox.register("expr_mut", gp.genFull, min_=1, max_=3)
     toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
 
-    pop = toolbox.population(n=10)
+    pop = toolbox.population(n=20)
     hof = tools.HallOfFame(1)
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", np.mean)
@@ -111,7 +110,7 @@ if __name__ == '__main__':
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.2, 50, stats, halloffame=hof)
+    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.2, 20, stats, halloffame=hof)
     plot_logbook(logbook)
     nodes,edges,labels = gp.graph(hof[0])
     plot_tree(nodes, edges, labels)
