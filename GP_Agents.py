@@ -76,7 +76,7 @@ class Prey:
             features[3+i] = how_many[2][i] / predator_neighbors_count if predator_neighbors_count else 0
         return features
 
-    def Change_Position(self, matrix, print_move):
+    def pick_action(self, matrix, print_move):
         """
         Perform action (i.e. movement) of the agent depending on its evaluations
         """
@@ -105,13 +105,18 @@ class Prey:
                             else:
                                 furthest_from_predator_location = own_location
 
-        result = self.tree_function(grass_nearby, predator_nearby)
-        if print_move: print(result)
+        result = self.tree_function(grass_nearby, predator_nearby, self.lastAte > (self.hunger_minimum // 2), self.age >= self.reproduction_age)
+        if print_move:
+            print(result)
         if result == 'go_from_predator':
-            return furthest_from_predator_location if furthest_from_predator_location is not None else own_location
+            return furthest_from_predator_location if furthest_from_predator_location is not None else own_location, -1, 0
         if result == 'go_to_food':
-            return grass_location if grass_location is not None else own_location
-        return own_location
+            return grass_location if grass_location is not None else own_location, -1, 0
+        if result == "eat":
+            return own_location, self.Eat(matrix.grid[self.x_position][self.y_position]), 0
+        if result == "reproduce":
+            return own_location, -1, self.Reproduce()
+        return own_location, -1, 0
 
     def Aging(self, i):
         self.age += 1
@@ -202,12 +207,10 @@ class Prey:
 
     def Reproduce(self):
         offspring = 0
-        if self.age >= self.reproduction_age:
-            r = np.random.rand()
-            if r < self.reproduction_rate:
-                offspring = Prey(self.x_position, self.y_position, -1, 0, self.ID, self.reproduction_age,
-                                 self.death_rate, self.reproduction_rate, self.weights, self.learning_rate,
-                                 self.discount_factor, self.hunger_minimum, self.tree_function)  # ID is changed in Grid.update()
+        if self.age >= self.reproduction_age and self.lastAte < (self.hunger_minimum / 2):
+            offspring = Prey(self.x_position, self.y_position, -1, 0, self.ID, self.reproduction_age,
+                             self.death_rate, self.reproduction_rate, self.weights, self.learning_rate,
+                             self.discount_factor, self.hunger_minimum, self.tree_function)  # ID is changed in Grid.update()
         return offspring
 
 
@@ -330,7 +333,7 @@ class Predator:
                 iMoore += 1
         return score
 
-    def Change_Position(self, matrix):
+    def pick_action(self, matrix):
         """
         Perform action (i.e. movement) of the agent depending on its evaluations
         """

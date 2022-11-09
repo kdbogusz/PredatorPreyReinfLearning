@@ -1,6 +1,5 @@
 import numpy as np
 from deap import gp, creator, base, tools, algorithms
-import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -64,8 +63,9 @@ def selector3(input1, input2, input3):
             return input
     return 'do_nothing'
 
+
 if __name__ == '__main__':
-    pset = gp.PrimitiveSet("main", 2)
+    pset = gp.PrimitiveSet("main", 4)
 
     pset.addPrimitive(sequence2, 2)
     pset.addPrimitive(sequence3, 3)
@@ -74,9 +74,13 @@ if __name__ == '__main__':
 
     pset.renameArguments(ARG0="food_nearby")
     pset.renameArguments(ARG1="predator_nearby")
+    pset.renameArguments(ARG2="hunger_over_half")
+    pset.renameArguments(ARG3="over_reproduction_age")
     pset.addTerminal('go_to_food')
     pset.addTerminal('go_from_predator')
     pset.addTerminal('do_nothing')
+    pset.addTerminal('eat')
+    pset.addTerminal('reproduce')
 
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
     creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)

@@ -176,7 +176,7 @@ class Grid:
                 predLastAte =predLastAte + agent.lastAte
                 agent.Aging(i)
                 # Moving and learning
-                [newCoordsX, newCoordsY] = agent.Change_Position(self)
+                [newCoordsX, newCoordsY] = agent.pick_action(self)
                 newCoordsX = int(newCoordsX)
                 newCoordsY = int(newCoordsY)
                 self.grid[x][y].remove(agent)
@@ -226,7 +226,7 @@ class Grid:
                 preyLastAte =preyLastAte + agent.lastAte
                 agent.Aging(i)
                 #Monving and learning
-                [newCoordsX, newCoordsY] = agent.Change_Position(self, self.print_move)
+                [newCoordsX, newCoordsY], eatenID, offspring = agent.pick_action(self, self.print_move)
                 newCoordsX = int(newCoordsX)
                 newCoordsY = int(newCoordsY)
                 self.grid[x][y].remove(agent)
@@ -240,7 +240,7 @@ class Grid:
                 if learning and "prey" not in simulated_agents:
                     r=agent.Get_Reward(self)
                     agent.Update_Weight(r, self, agent.q)
-                eatenID = agent.Eat(self.grid[x][y])
+                # eatenID = agent.Eat(self.grid[x][y])
                 if eatenID != -1:
                     for agents in self.grid[x][y]:
                         if agents.ID == eatenID:
@@ -262,15 +262,15 @@ class Grid:
                         self.grid[x][y].remove(agent)
                         self.agentList.remove(agentInfo)
                         deathsbystv=deathsbystv+1
-                    else:
-                        offspring = agent.Reproduce()
-                        if offspring != 0:
-                            offspring.ID = self.ID
-                            offspring.epsilon = agent.epsilon
-                            self.numPrey += 1
-                            self.grid[x][y].append(offspring)
-                            self.agentList.append([self.ID, x, y, 1])
-                            self.ID += 1
+
+                if offspring != 0:
+                    offspring.ID = self.ID
+                    offspring.epsilon = agent.epsilon
+                    self.numPrey += 1
+                    self.grid[x][y].append(offspring)
+                    self.agentList.append([self.ID, x, y, 1])
+                    self.ID += 1
+
             elif agentType == 2:
                 offspring = agent.update()
                 if offspring != 0:

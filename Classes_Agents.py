@@ -138,7 +138,7 @@ class Prey :
                     iMoore +=1
             return score
 
-        def Change_Position(self, matrix):
+        def pick_action(self, matrix):
             """
             Perform action (i.e. movement) of the agent depending on its evaluations
             """
@@ -375,7 +375,7 @@ class Predator:
                     iMoore += 1
             return score
  
-        def Change_Position(self,matrix):
+        def pick_action(self,matrix):
             """
             Perform action (i.e. movement) of the agent depending on its evaluations
             """            
