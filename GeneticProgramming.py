@@ -3,7 +3,7 @@ from deap import gp, creator, base, tools, algorithms
 import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.pyplot as plt
-
+import multiprocessing
 from Simulation import fitness_function
 
 def plot_logbook(logbook):
@@ -64,43 +64,43 @@ def selector3(input1, input2, input3):
             return input
     return False
 
+pset = gp.PrimitiveSet("main", 2)
+
+pset.addPrimitive(sequence2, 2)
+pset.addPrimitive(sequence3, 3)
+pset.addPrimitive(selector2, 2)
+pset.addPrimitive(selector3, 3)
+
+pset.renameArguments(ARG0="food_nearby")
+pset.renameArguments(ARG1="predator_nearby")
+pset.addTerminal('go_to_food')
+pset.addTerminal('go_from_predator')
+
+def eval_prey(individual):
+    routine = gp.compile(individual, pset)
+
+    res = fitness_function(routine)
+
+    return res,
+
+creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
+toolbox = base.Toolbox()
+toolbox.register("expr_init", gp.genFull, pset=pset, min_=1, max_=3)
+
+toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr_init)
+toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+toolbox.register("evaluate", eval_prey)
+toolbox.register("select", tools.selTournament, tournsize=3)
+toolbox.register("mate", gp.cxOnePoint)
+toolbox.register("expr_mut", gp.genFull, min_=1, max_=3)
+toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
+
 if __name__ == '__main__':
-    pset = gp.PrimitiveSet("main", 2)
 
-    pset.addPrimitive(sequence2, 2)
-    pset.addPrimitive(sequence3, 3)
-    pset.addPrimitive(selector2, 2)
-    pset.addPrimitive(selector3, 3)
-
-    pset.renameArguments(ARG0="food_nearby")
-    pset.renameArguments(ARG1="predator_nearby")
-    pset.addTerminal('go_to_food')
-    pset.addTerminal('go_from_predator')
-
-    creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-    creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
-
-    toolbox = base.Toolbox()
-
-    toolbox.register("expr_init", gp.genFull, pset=pset, min_=1, max_=3)
-
-    toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr_init)
-    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-
-    def eval_prey(individual):
-        routine = gp.compile(individual, pset)
-
-        res = fitness_function(routine)
-
-        return res,
-
-
-    toolbox.register("evaluate", eval_prey)
-    toolbox.register("select", tools.selTournament, tournsize=3)
-    toolbox.register("mate", gp.cxOnePoint)
-    toolbox.register("expr_mut", gp.genFull, min_=1, max_=3)
-    toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
+    cpu_count = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(cpu_count)
+    toolbox.register("map", pool.map)
 
     pop = toolbox.population(n=20)
     hof = tools.HallOfFame(1)
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.2, 20, stats, halloffame=hof)
+    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 20, stats, halloffame=hof)
     plot_logbook(logbook)
     nodes,edges,labels = gp.graph(hof[0])
     plot_tree(nodes, edges, labels)
