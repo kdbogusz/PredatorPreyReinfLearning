@@ -7,8 +7,10 @@ from GrassAgent import *
 from GP_Agents import Prey, Predator
 from matplotlib import pyplot as plt
 
+def fitness_function(prey_function):
+    return np.mean([run_simulation(prey_function) for _ in range(3)])
 
-def run_simulation(prey_function, print_move=False):
+def run_simulation(prey_function, print_move=False, draw_grid=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--gridDim', default=50, type=int, help='Size of the grid')
     parser.add_argument('--nPredators', default=100, type=int, help='Number of initial predators')
@@ -67,6 +69,7 @@ def run_simulation(prey_function, print_move=False):
 
     for i in range(1, numLearningIterations):
         numAgents = grid.update(True, i, ["prey"])
+        if draw_grid: grid.draw()
         preyV.append(numAgents[0])
         predV.append(numAgents[1])
         grassV.append(numAgents[2])
@@ -81,6 +84,7 @@ def run_simulation(prey_function, print_move=False):
 
     while numAgents[0] > 0 and i <= totalNumIterations:
         numAgents = grid.update(False, i, ["prey"])
+        if draw_grid: grid.draw()
         i += 1
         preyV.append(numAgents[0])
         predV.append(numAgents[1])
