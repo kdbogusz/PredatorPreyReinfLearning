@@ -1,10 +1,9 @@
 import numpy as np
 from deap import gp, creator, base, tools, algorithms
-import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.pyplot as plt
 import multiprocessing
-from Simulation import fitness_function
+from Simulation import fitness_function, run_simulation
 
 def plot_logbook(logbook):
     min_values = logbook.select("min")
@@ -27,6 +26,10 @@ def plot_tree(nodes, edges, labels):
     nx.draw_networkx_edges(g, pos)
     nx.draw_networkx_labels(g, pos, labels)
     plt.show()
+
+def show_behaviour(best_individual):
+    best_individual_routine = gp.compile(best_individual, pset)
+    run_simulation(best_individual_routine, draw_grid=True)
 
 def sequence3(input1, input2, input3):
     for input in [input1, input2, input3]:
@@ -64,17 +67,20 @@ def selector3(input1, input2, input3):
             return input
     return False
 
-pset = gp.PrimitiveSet("main", 2)
-
+pset = gp.PrimitiveSet("main", 4)
 pset.addPrimitive(sequence2, 2)
 pset.addPrimitive(sequence3, 3)
 pset.addPrimitive(selector2, 2)
 pset.addPrimitive(selector3, 3)
-
 pset.renameArguments(ARG0="food_nearby")
 pset.renameArguments(ARG1="predator_nearby")
+pset.renameArguments(ARG2="hunger_over_half")
+pset.renameArguments(ARG3="over_reproduction_age")
 pset.addTerminal('go_to_food')
 pset.addTerminal('go_from_predator')
+pset.addTerminal('do_nothing')
+pset.addTerminal('eat')
+pset.addTerminal('reproduce')
 
 def eval_prey(individual):
     routine = gp.compile(individual, pset)
@@ -102,7 +108,7 @@ if __name__ == '__main__':
     pool = multiprocessing.Pool(cpu_count)
     toolbox.register("map", pool.map)
 
-    pop = toolbox.population(n=20)
+    pop = toolbox.population(n=2)
     hof = tools.HallOfFame(1)
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", np.mean)
@@ -110,9 +116,10 @@ if __name__ == '__main__':
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 20, stats, halloffame=hof)
+    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 2, stats, halloffame=hof)
     plot_logbook(logbook)
     nodes,edges,labels = gp.graph(hof[0])
     plot_tree(nodes, edges, labels)
+    show_behaviour(hof[0])
 
    
