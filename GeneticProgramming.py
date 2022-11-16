@@ -4,6 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import multiprocessing
 from Simulation import fitness_function, run_simulation
+import random
 
 def plot_logbook(logbook):
     min_values = logbook.select("min")
@@ -107,19 +108,23 @@ if __name__ == '__main__':
     cpu_count = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(cpu_count)
     toolbox.register("map", pool.map)
-
-    pop = toolbox.population(n=2)
-    hof = tools.HallOfFame(1)
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", np.mean)
     stats.register("std", np.std)
     stats.register("min", np.min)
     stats.register("max", np.max)
+    number_of_seeds = 5
+    results = {}
+    for seed in range(number_of_seeds):
+        random.seed(seed)
+        pop = toolbox.population(n=20)
+        hof = tools.HallOfFame(1)
+        _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 20, stats, halloffame=hof)
+        avg_values = logbook.select("avg")
+        results[seed] = avg_values
+        plt.plot(np.arange(len(avg_values)), avg_values, label=f"seed {seed}")
+    plt.legend()
+    plt.show()
 
-    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 2, stats, halloffame=hof)
-    plot_logbook(logbook)
-    nodes,edges,labels = gp.graph(hof[0])
-    plot_tree(nodes, edges, labels)
-    show_behaviour(hof[0])
 
    
