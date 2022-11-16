@@ -25,7 +25,7 @@ def run_simulation(prey_function, print_move=False, draw_grid=False):
     parser.add_argument('--preyDeathRate', default=0.05, type=int, help='Probability of dying by hunger')
     parser.add_argument('--preyRepRate', default=0.1, type=int, help='Probabiliy of giving birth')
     parser.add_argument('--mPred', default=10, type=int)
-    parser.add_argument('--mPrey', default=8, type=int)
+    parser.add_argument('--mPrey', default=16, type=int)
     parser.add_argument('--grassRepRate', default=0.02, type=int, help='Probabiliy of giving birth')
     parser.add_argument('--grassConsRate', default=0.2, type=int, help='How much it gets consumed when eaten')
     parser.add_argument('--numLearningIterations', default=100, type=int, help='Time in which the agents can learn')
