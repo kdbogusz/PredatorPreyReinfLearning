@@ -8,12 +8,12 @@ from GP_Agents import Prey, Predator
 from matplotlib import pyplot as plt
 
 
-def run_simulation(prey_function, print_move=False):
+def run_simulation(prey_function, pred_function, print_move=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gridDim', default=50, type=int, help='Size of the grid')
-    parser.add_argument('--nPredators', default=100, type=int, help='Number of initial predators')
-    parser.add_argument('--nPrey', default=400, type=int, help='Number of initial preys')
-    parser.add_argument('--nGrass', default=1200, type=int, help='Number of initial grass')
+    parser.add_argument('--gridDim', default=25, type=int, help='Size of the grid')
+    parser.add_argument('--nPredators', default=50, type=int, help='Number of initial predators')
+    parser.add_argument('--nPrey', default=200, type=int, help='Number of initial preys')
+    parser.add_argument('--nGrass', default=400, type=int, help='Number of initial grass')
     parser.add_argument('--learningRate', default=0.05, type=int, help='learning rate of RL')
     parser.add_argument('--discountFactor', default=1, type=int, help='Discount factor of RL')
     parser.add_argument('--predRepAge', default=10, type=int, help='Reproduction Age of predators')
@@ -22,8 +22,8 @@ def run_simulation(prey_function, print_move=False):
     parser.add_argument('--preyRepAge', default=8, type=int, help='Reproduction Age of preys')
     parser.add_argument('--preyDeathRate', default=0.05, type=int, help='Probability of dying by hunger')
     parser.add_argument('--preyRepRate', default=0.1, type=int, help='Probabiliy of giving birth')
-    parser.add_argument('--mPred', default=10, type=int)
-    parser.add_argument('--mPrey', default=8, type=int)
+    parser.add_argument('--mPred', default=64, type=int)
+    parser.add_argument('--mPrey', default=16, type=int)
     parser.add_argument('--grassRepRate', default=0.02, type=int, help='Probabiliy of giving birth')
     parser.add_argument('--grassConsRate', default=0.2, type=int, help='How much it gets consumed when eaten')
     parser.add_argument('--numLearningIterations', default=100, type=int, help='Time in which the agents can learn')
@@ -63,7 +63,7 @@ def run_simulation(prey_function, print_move=False):
 
     grid = Grid(xDim, yDim, nPredators, nPrey, nGrass, learningRate, discountFactor,
                 predRepAge, predDeathRate, predRepRate, preyRepAge, preyDeathRate, preyRepRate, mPred, mPrey,
-                grassRepRate, grassConsRate, prey_function, print_move)
+                grassRepRate, grassConsRate, prey_function, pred_function, print_move)
 
     for i in range(1, numLearningIterations):
         numAgents = grid.update(True, i, ["prey"])
@@ -90,13 +90,14 @@ def run_simulation(prey_function, print_move=False):
         preyLastAteV.append(preyLastAteP)
         ratioV.append(ratio)
 
-    return numAgents[1]
+    # return sum(preyV) / 100 + numAgents[0], sum(predV) / 100 + numAgents[1]
+    return numAgents[0], numAgents[1]
 
 
 class Grid:
     def __init__(self, xDim, yDim, nPredators, nPrey, nGrass, learningRate, discountFactor,
                  predRepAge, predDeathRate, predRepRate, preyRepAge, preyDeathRate, preyRepRate,
-                 mPred, mPrey, grassRepRate, grassConsRate, prey_function, print_move):
+                 mPred, mPrey, grassRepRate, grassConsRate, prey_function, pred_function, print_move):
         self.xDim = xDim
         self.yDim = yDim
         self.nPredators = nPredators
@@ -128,7 +129,7 @@ class Grid:
             x = random.randint(0, xDim - 1)
             y = random.randint(0, yDim - 1)
             pred = Predator(x, y, self.ID, 0, -1, predRepAge, predDeathRate,
-                            predRepRate, initWeights, learningRate, discountFactor, mPred)
+                            predRepRate, initWeights, learningRate, discountFactor, mPred, pred_function)
             self.grid[x][y].append(pred)
             self.agentList.append([self.ID, x, y, 0])
             self.ID += 1
@@ -176,21 +177,21 @@ class Grid:
                 predLastAte =predLastAte + agent.lastAte
                 agent.Aging(i)
                 # Moving and learning
-                [newCoordsX, newCoordsY] = agent.pick_action(self)
+                [newCoordsX, newCoordsY], eatenID, offspring = agent.pick_action(self, self.print_move)
                 newCoordsX = int(newCoordsX)
                 newCoordsY = int(newCoordsY)
                 self.grid[x][y].remove(agent)
                 agent.x_position = newCoordsX
                 agent.y_position = newCoordsY
+                # print(newCoordsX, newCoordsY)
                 self.grid[newCoordsX][newCoordsY].append(agent)
                 agentInfo[1] = newCoordsX
                 agentInfo[2] = newCoordsY
                 x = newCoordsX
                 y = newCoordsY
-                if learning:
-                    r=agent.Get_Reward(self)
-                    agent.Update_Weight(r, self, agent.q)
-                eatenID = agent.Eat(self.grid[x][y])
+                # if learning:
+                #     r=agent.Get_Reward(self)
+                #     agent.Update_Weight(r, self, agent.q)
                 if eatenID != -1:
                     for agents in self.grid[x][y]:
                         if agents.ID == eatenID:
@@ -213,15 +214,14 @@ class Grid:
                         self.numPred -= 1
                         self.grid[x][y].remove(agent)
                         self.agentList.remove(agentInfo)
-                    else:
-                        offspring = agent.Reproduce()
-                        if offspring != 0:
-                            offspring.ID = self.ID
-                            offspring.epsilon = agent.epsilon
-                            self.numPred += 1
-                            self.grid[x][y].append(offspring)
-                            self.agentList.append([self.ID, x, y, 0])
-                            self.ID += 1
+
+                if offspring != 0:
+                    offspring.ID = self.ID
+                    offspring.epsilon = agent.epsilon
+                    self.numPred += 1
+                    self.grid[x][y].append(offspring)
+                    self.agentList.append([self.ID, x, y, 0])
+                    self.ID += 1
             elif agentType == 1:
                 preyLastAte =preyLastAte + agent.lastAte
                 agent.Aging(i)
@@ -237,9 +237,9 @@ class Grid:
                 agentInfo[2] = newCoordsY
                 x = newCoordsX
                 y = newCoordsY
-                if learning and "prey" not in simulated_agents:
-                    r=agent.Get_Reward(self)
-                    agent.Update_Weight(r, self, agent.q)
+                # if learning and "prey" not in simulated_agents:
+                #     r=agent.Get_Reward(self)
+                #     agent.Update_Weight(r, self, agent.q)
                 # eatenID = agent.Eat(self.grid[x][y])
                 if eatenID != -1:
                     for agents in self.grid[x][y]:
