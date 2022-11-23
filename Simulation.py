@@ -26,8 +26,8 @@ def run_simulation(prey_function, print_move=False, draw_grid=False):
     parser.add_argument('--preyRepRate', default=0.1, type=int, help='Probabiliy of giving birth')
     parser.add_argument('--mPred', default=10, type=int)
     parser.add_argument('--mPrey', default=16, type=int)
-    parser.add_argument('--grassRepRate', default=0.02, type=int, help='Probabiliy of giving birth')
-    parser.add_argument('--grassConsRate', default=0.2, type=int, help='How much it gets consumed when eaten')
+    parser.add_argument('--grassRepRate', default=0.005, type=int, help='Probabiliy of giving birth')
+    parser.add_argument('--grassConsRate', default=0.25, type=int, help='How much it gets consumed when eaten')
     parser.add_argument('--numLearningIterations', default=100, type=int, help='Time in which the agents can learn')
     parser.add_argument('--totalNumIterations', default=100, type=int)
 
@@ -53,6 +53,7 @@ def run_simulation(prey_function, print_move=False, draw_grid=False):
 
     numLearningIterations = args.numLearningIterations
     totalNumIterations = args.totalNumIterations
+    all_epochs_num_agents = []
 
     preyV = []
     predV = []
@@ -77,6 +78,7 @@ def run_simulation(prey_function, print_move=False, draw_grid=False):
         predLastAteV.append(predLastAteP)
         preyLastAteV.append(preyLastAteP)
         ratioV.append(ratio)
+        all_epochs_num_agents.append(numAgents.copy())
         # a = ExtractInfo(grid)
         # WeightsInfo.append(a)
 
@@ -93,8 +95,9 @@ def run_simulation(prey_function, print_move=False, draw_grid=False):
         predLastAteV.append(predLastAteP)
         preyLastAteV.append(preyLastAteP)
         ratioV.append(ratio)
+        all_epochs_num_agents.append(numAgents.copy())
 
-    return numAgents[1]
+    return np.sum([i/100*numAgents[1] for i,numAgents in enumerate(all_epochs_num_agents)])
 
 
 class Grid:

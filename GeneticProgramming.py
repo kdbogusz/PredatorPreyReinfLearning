@@ -131,6 +131,5 @@ if __name__ == '__main__':
     plot_logbook(logbook)
     plot_tree(hof[0])
     cp = dict(halloffame=hof, logbook=logbook)
-    with open(f"checkpoint_{EPOCHS_COUNT}_{POPULATION_SIZE}.pkl", "wb") as cp_file:
+    with open(f"checkpoints/checkpoint_{EPOCHS_COUNT}_{POPULATION_SIZE}.pkl", "wb") as cp_file:
         pickle.dump(cp, cp_file)
-    show_behaviour(hof[0])
