@@ -102,6 +102,11 @@ class Prey:
         own_location = np.array([self.x_position, self.y_position])
         location_predator_min_distance = self.predator_distance(matrix, own_location)
         furthest_from_predator_location = own_location
+        cell_with_food = False
+        for entity in matrix.grid[own_location[0]][own_location[1]]:
+            if entity.ptype == 0:
+                cell_with_food = True 
+                break
         for dx, dy in von_neumann_neighborhood(1):
             new_location = [self.x_position + dx, self.y_position + dy]
             if self.in_grid(matrix, new_location):
@@ -113,7 +118,7 @@ class Prey:
                 if location_predator_distance < location_predator_min_distance:
                     location_predator_min_distance = location_predator_distance
                     furthest_from_predator_location = new_location
-        result = self.tree_function(grass_nearby, location_predator_min_distance < 4, self.lastAte > (self.hunger_minimum // 2), self.age >= self.reproduction_age)
+        result = self.tree_function(grass_nearby, location_predator_min_distance < 4, self.lastAte > (self.hunger_minimum // 2), self.age >= self.reproduction_age, cell_with_food)
         if print_move:
             print(result)
         if result == 'go_from_predator':
@@ -215,10 +220,13 @@ class Prey:
 
     def Reproduce(self):
         offspring = 0
+        food_in_stomach = self.hunger_minimum - self.lastAte
+        offspring_food = food_in_stomach // 2
         if self.age >= self.reproduction_age and self.lastAte < (self.hunger_minimum / 2):
+            self.lastAte = self.hunger_minimum - food_in_stomach + offspring_food
             offspring = Prey(self.x_position, self.y_position, -1, 0, self.ID, self.reproduction_age,
                              self.death_rate, self.reproduction_rate, self.weights, self.learning_rate,
-                             self.discount_factor, self.hunger_minimum, self.tree_function)  # ID is changed in Grid.update()
+                             self.discount_factor, offspring_food, self.tree_function)  # ID is changed in Grid.update()
         return offspring
 
 
