@@ -53,7 +53,7 @@ def selector2(input1, input2):
             continue
         else:
             return input
-    return 'do_nothing'
+    return False
 
 def selector3(input1, input2, input3):
     for input in [input1, input2, input3]:
@@ -61,12 +61,12 @@ def selector3(input1, input2, input3):
             continue
         else:
             return input
-    return 'do_nothing'
+    return False
 
 
 if __name__ == '__main__':
 
-    pset_prey = gp.PrimitiveSet("main", 4)
+    pset_prey = gp.PrimitiveSet("main", 5)
 
     pset_prey.addPrimitive(sequence2, 2)
     pset_prey.addPrimitive(sequence3, 3)
@@ -77,6 +77,7 @@ if __name__ == '__main__':
     pset_prey.renameArguments(ARG1="predator_nearby")
     pset_prey.renameArguments(ARG2="hunger_over_half")
     pset_prey.renameArguments(ARG3="over_reproduction_age")
+    pset_prey.renameArguments(ARG4="on_grass")
     pset_prey.addTerminal('go_to_food')
     pset_prey.addTerminal('go_from_predator')
     pset_prey.addTerminal('do_nothing')
@@ -126,7 +127,10 @@ if __name__ == '__main__':
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
     creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
 
-    for i in range(10):
+    prey_logs = []
+    predator_logs = []
+
+    for i in range(3):
 
         toolbox_prey = base.Toolbox()
         toolbox_predator = base.Toolbox()
@@ -172,11 +176,41 @@ if __name__ == '__main__':
 
         _, logbook = algorithms.eaSimple(pop_prey, toolbox_prey, 0.5, 0.2, 5, stats_prey, halloffame=hof_prey)
         best_prey = hof_prey[0]
+        nodes, edges, labels = gp.graph(hof_prey[0])
+        plot_tree(nodes, edges, labels)
 
-        _, logbook = algorithms.eaSimple(pop_predator, toolbox_predator, 0.5, 0.2, 5, stats_predator, halloffame=hof_predator)
+        if len(prey_logs) == 0:
+            prey_logs.append(logbook.select("avg"))
+        else:
+            prey_logs.append(logbook.select("avg")[1:])
+
+        _, logbook = algorithms.eaSimple(pop_predator, toolbox_predator, 0.5, 0.6, 5, stats_predator, halloffame=hof_predator)
         best_predator = hof_predator[0]
         nodes, edges, labels = gp.graph(hof_predator[0])
         plot_tree(nodes, edges, labels)
+
+        if len(predator_logs) == 0:
+            predator_logs.append(logbook.select("avg"))
+        else:
+            predator_logs.append(logbook.select("avg")[1:])
+
+    # avg_prey = prey_logs.select("avg")
+    # avg_pred = predator_logs.select("avg")
+
+    x_prey = list(range(6))
+    x_predator = list(range(6, 12))
+    for i in range(1, 10):
+        x_prey.append(range(12 + i * 5, 12 + (i + 1) * 6))
+        x_prey.append(range(17 + i * 5, 17 + (i + 1) * 6))
+    x_values = np.array([0] * 52)
+
+    # epoch_values = np.arange(len(avg_values))
+    # plt.errorbar(epoch_values, avg_values, std_values, label="avg +- std", ls='none', capsize=3, fmt='o')
+    plt.plot(x_prey, prey_logs, "-o", label="prey")
+    plt.plot(x_predator, predator_logs, "-o", label="predator")
+    plt.legend()
+    plt.show()
+
     # plot_logbook(logbook)
     # nodes, edges, labels = gp.graph(hof[0])
     # plot_tree(nodes, edges, labels)

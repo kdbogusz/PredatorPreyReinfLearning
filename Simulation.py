@@ -10,10 +10,10 @@ from matplotlib import pyplot as plt
 
 def run_simulation(prey_function, pred_function, print_move=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gridDim', default=25, type=int, help='Size of the grid')
-    parser.add_argument('--nPredators', default=50, type=int, help='Number of initial predators')
-    parser.add_argument('--nPrey', default=200, type=int, help='Number of initial preys')
-    parser.add_argument('--nGrass', default=400, type=int, help='Number of initial grass')
+    parser.add_argument('--gridDim', default=50, type=int, help='Size of the grid')
+    parser.add_argument('--nPredators', default=200, type=int, help='Number of initial predators')
+    parser.add_argument('--nPrey', default=800, type=int, help='Number of initial preys')
+    parser.add_argument('--nGrass', default=1600, type=int, help='Number of initial grass')
     parser.add_argument('--learningRate', default=0.05, type=int, help='learning rate of RL')
     parser.add_argument('--discountFactor', default=1, type=int, help='Discount factor of RL')
     parser.add_argument('--predRepAge', default=10, type=int, help='Reproduction Age of predators')
@@ -90,8 +90,8 @@ def run_simulation(prey_function, pred_function, print_move=False):
         preyLastAteV.append(preyLastAteP)
         ratioV.append(ratio)
 
-    # return sum(preyV) / 100 + numAgents[0], sum(predV) / 100 + numAgents[1]
-    return numAgents[0], numAgents[1]
+    return sum(preyV) / 100, sum(predV) / 100
+    # return numAgents[0], numAgents[1]
 
 
 class Grid:
