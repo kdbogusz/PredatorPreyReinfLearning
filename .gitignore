@@ -5,3 +5,4 @@ GrassList.txt
 venv
 .idea
 __pycache__
+checkpoints/*

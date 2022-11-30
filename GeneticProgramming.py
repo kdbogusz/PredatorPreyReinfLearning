@@ -4,6 +4,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import multiprocessing
 from Simulation import fitness_function, run_simulation
+import random
+import pickle
 
 def plot_logbook(logbook):
     min_values = logbook.select("min")
@@ -17,7 +19,8 @@ def plot_logbook(logbook):
     plt.legend()
     plt.show()
 
-def plot_tree(nodes, edges, labels):
+def plot_tree(hall_of_fame_individual):
+    nodes, edges, labels = gp.graph(hall_of_fame_individual)
     g = nx.Graph()
     g.add_nodes_from(nodes)
     g.add_edges_from(edges)
@@ -67,7 +70,7 @@ def selector3(input1, input2, input3):
             return input
     return False
 
-pset = gp.PrimitiveSet("main", 4)
+pset = gp.PrimitiveSet("main", 5)
 pset.addPrimitive(sequence2, 2)
 pset.addPrimitive(sequence3, 3)
 pset.addPrimitive(selector2, 2)
@@ -76,6 +79,7 @@ pset.renameArguments(ARG0="food_nearby")
 pset.renameArguments(ARG1="predator_nearby")
 pset.renameArguments(ARG2="hunger_over_half")
 pset.renameArguments(ARG3="over_reproduction_age")
+pset.renameArguments(ARG4="cell_with_food")
 pset.addTerminal('go_to_food')
 pset.addTerminal('go_from_predator')
 pset.addTerminal('do_nothing')
@@ -102,24 +106,30 @@ toolbox.register("mate", gp.cxOnePoint)
 toolbox.register("expr_mut", gp.genFull, min_=1, max_=3)
 toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
 
-if __name__ == '__main__':
+def read_checkpoint(filename):
+    with open(filename, "rb") as cp_file:
+        cp = pickle.load(cp_file)
+    return cp
 
+if __name__ == '__main__':
+    EPOCHS_COUNT = 50
+    POPULATION_SIZE = 30
     cpu_count = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(cpu_count)
     toolbox.register("map", pool.map)
-
-    pop = toolbox.population(n=2)
-    hof = tools.HallOfFame(1)
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", np.mean)
     stats.register("std", np.std)
     stats.register("min", np.min)
     stats.register("max", np.max)
-
-    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 2, stats, halloffame=hof)
+    number_of_seeds = 1
+    results = {}
+    pop = toolbox.population(n=POPULATION_SIZE)
+    hof = tools.HallOfFame(3)
+    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, EPOCHS_COUNT, stats, halloffame=hof)
+    avg_values = logbook.select("avg")
     plot_logbook(logbook)
-    nodes,edges,labels = gp.graph(hof[0])
-    plot_tree(nodes, edges, labels)
-    show_behaviour(hof[0])
-
-   
+    plot_tree(hof[0])
+    cp = dict(halloffame=hof, logbook=logbook)
+    with open(f"checkpoints/checkpoint_{EPOCHS_COUNT}_{POPULATION_SIZE}.pkl", "wb") as cp_file:
+        pickle.dump(cp, cp_file)
