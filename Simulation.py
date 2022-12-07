@@ -7,6 +7,8 @@ from GrassAgent import *
 from GP_Agents import Prey, Predator
 from matplotlib import pyplot as plt
 
+def fitness_function(prey_function):
+    return np.mean([run_simulation(prey_function) for _ in range(3)])
 
 def run_simulation(prey_function, pred_function, print_move=False, draw_grid=False):
     parser = argparse.ArgumentParser()
@@ -51,6 +53,7 @@ def run_simulation(prey_function, pred_function, print_move=False, draw_grid=Fal
 
     numLearningIterations = args.numLearningIterations
     totalNumIterations = args.totalNumIterations
+    all_epochs_num_agents = []
 
     preyV = []
     predV = []
@@ -68,6 +71,7 @@ def run_simulation(prey_function, pred_function, print_move=False, draw_grid=Fal
     for i in range(1, numLearningIterations):
         if draw_grid: grid.draw()
         numAgents = grid.update(True, i, ["prey"])
+        if draw_grid: grid.draw()
         preyV.append(numAgents[0])
         predV.append(numAgents[1])
         grassV.append(numAgents[2])
@@ -75,6 +79,7 @@ def run_simulation(prey_function, pred_function, print_move=False, draw_grid=Fal
         predLastAteV.append(predLastAteP)
         preyLastAteV.append(preyLastAteP)
         ratioV.append(ratio)
+        all_epochs_num_agents.append(numAgents.copy())
         # a = ExtractInfo(grid)
         # WeightsInfo.append(a)
 
@@ -83,6 +88,7 @@ def run_simulation(prey_function, pred_function, print_move=False, draw_grid=Fal
     while numAgents[0] > 0 and i <= totalNumIterations:
         if draw_grid: grid.draw()
         numAgents = grid.update(False, i, ["prey"])
+        if draw_grid: grid.draw()
         i += 1
         preyV.append(numAgents[0])
         predV.append(numAgents[1])
@@ -91,6 +97,7 @@ def run_simulation(prey_function, pred_function, print_move=False, draw_grid=Fal
         predLastAteV.append(predLastAteP)
         preyLastAteV.append(preyLastAteP)
         ratioV.append(ratio)
+        all_epochs_num_agents.append(numAgents.copy())
 
     # return sum(preyV) / 100, sum(predV) / 100
     return numAgents[0], numAgents[1]

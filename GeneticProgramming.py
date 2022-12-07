@@ -59,7 +59,21 @@ def show_behaviour():
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
+toolbox = base.Toolbox()
+toolbox.register("expr_init", gp.genFull, pset=pset, min_=1, max_=3)
 
+toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr_init)
+toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+toolbox.register("evaluate", eval_prey)
+toolbox.register("select", tools.selTournament, tournsize=3)
+toolbox.register("mate", gp.cxOnePoint)
+toolbox.register("expr_mut", gp.genFull, min_=1, max_=3)
+toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
+
+def read_checkpoint(filename):
+    with open(filename, "rb") as cp_file:
+        cp = pickle.load(cp_file)
+    return cp
 
 if __name__ == '__main__':
 

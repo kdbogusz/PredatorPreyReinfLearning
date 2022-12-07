@@ -38,7 +38,6 @@ class Prey:
         predator_nearby = False
         on_grass = False
         grass_location = None
-        predator_location = None
         furthest_from_predator_location = None
         own_location = np.array([self.x_position, self.y_position])
         for dx in [-1, 0, 1]:
@@ -116,7 +115,7 @@ class Prey:
             self.lastAte = self.hunger_minimum - food_in_stomach + offspring_food
             offspring = Prey(self.x_position, self.y_position, -1, self.hunger_minimum - offspring_food, self.ID, self.reproduction_age,
                              self.death_rate, self.reproduction_rate, self.weights, self.learning_rate,
-                             self.discount_factor, self.hunger_minimum, self.tree_function)  # ID is changed in Grid.update()
+                             self.discount_factor, offspring_food, self.tree_function)  # ID is changed in Grid.update()
         return offspring
 
 
