@@ -14,11 +14,11 @@ def run_simulation(prey_function, pred_function, print_move=False, draw_grid=Fal
     parser = argparse.ArgumentParser()
     parser.add_argument('--gridDim', default=50, type=int, help='Size of the grid')
     parser.add_argument('--nPredators', default=400, type=int, help='Number of initial predators')
-    parser.add_argument('--nPrey', default=1500, type=int, help='Number of initial preys')
+    parser.add_argument('--nPrey', default=1200, type=int, help='Number of initial preys')
     parser.add_argument('--nGrass', default=1600, type=int, help='Number of initial grass')
     parser.add_argument('--learningRate', default=0.05, type=int, help='learning rate of RL')
     parser.add_argument('--discountFactor', default=1, type=int, help='Discount factor of RL')
-    parser.add_argument('--predRepAge', default=10, type=int, help='Reproduction Age of predators')
+    parser.add_argument('--predRepAge', default=8, type=int, help='Reproduction Age of predators')
     parser.add_argument('--predDeathRate', default=0.019, type=int, help='Probability of dying by hunger')
     parser.add_argument('--predRepRate', default=0.1, type=int, help='Probabiliy of giving birth')
     parser.add_argument('--preyRepAge', default=8, type=int, help='Reproduction Age of preys')
@@ -99,9 +99,8 @@ def run_simulation(prey_function, pred_function, print_move=False, draw_grid=Fal
         ratioV.append(ratio)
         all_epochs_num_agents.append(numAgents.copy())
 
-    # return sum(preyV) / 100, sum(predV) / 100
-    return numAgents[0], numAgents[1]
-
+    fitness = lambda values: sum([((i+1)**2) * value / 400 for i, value in enumerate(values[-20:])])
+    return fitness(preyV), fitness(predV)
 
 class Grid:
     def __init__(self, xDim, yDim, nPredators, nPrey, nGrass, learningRate, discountFactor,
