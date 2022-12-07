@@ -59,28 +59,14 @@ def show_behaviour():
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
-toolbox = base.Toolbox()
-toolbox.register("expr_init", gp.genFull, pset=pset, min_=1, max_=3)
-
-toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr_init)
-toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-toolbox.register("evaluate", eval_prey)
-toolbox.register("select", tools.selTournament, tournsize=3)
-toolbox.register("mate", gp.cxOnePoint)
-toolbox.register("expr_mut", gp.genFull, min_=1, max_=3)
-toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
-
-def read_checkpoint(filename):
-    with open(filename, "rb") as cp_file:
-        cp = pickle.load(cp_file)
-    return cp
 
 if __name__ == '__main__':
 
     prey_logs = []
     predator_logs = []
-    pool1 = multiprocessing.Pool(3)
-    pool2 = multiprocessing.Pool(3)
+    cpu_count = multiprocessing.cpu_count()
+    pool1 = multiprocessing.Pool(cpu_count // 2)
+    pool2 = multiprocessing.Pool(cpu_count // 2)
 
     for i in range(3):
         toolbox_prey = create_toolbox(pset_prey, pool1, "prey", eval_prey)
