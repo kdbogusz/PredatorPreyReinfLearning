@@ -45,7 +45,6 @@ def eval_prey(individual):
     _, res = run_simulation(routine, predator_routine)
     return res,
 
-
 def eval_predator(individual):
     routine = gp.compile(individual, pset_predator)
     prey_routine = gp.compile(best_prey, pset_prey)
@@ -65,31 +64,51 @@ if __name__ == '__main__':
     prey_logs = []
     predator_logs = []
     cpu_count = multiprocessing.cpu_count()
-    pool1 = multiprocessing.Pool(cpu_count // 2)
+    pool1 = multiprocessing.Pool(cpu_count)
     pool2 = multiprocessing.Pool(cpu_count // 2)
 
-    for i in range(3):
-        toolbox_prey = create_toolbox(pset_prey, pool1, "prey", eval_prey)
-        if pop_prey is None: 
-            pop_prey = toolbox_prey.population(n=10)
-        hof_prey = tools.HallOfFame(1)
-        stats_prey = create_stats()
+    toolbox_prey = create_toolbox(pset_prey, pool1, eval_prey)
+    pop_prey = toolbox_prey.population(n=10)
+    hof_prey = tools.HallOfFame(1)
+    stats_prey = create_stats()
+    _, logbook = algorithms.eaSimple(pop_prey, toolbox_prey, 0.5, 0.2, 5, stats_prey, halloffame=hof_prey)
+    best_prey = hof_prey[0]
+    nodes, edges, labels = gp.graph(hof_prey[0])
+    plot_tree(nodes, edges, labels)
 
-        toolbox_predator = create_toolbox(pset_predator, pool2, "predator", eval_predator)
-        if pop_predator is None: 
-            pop_predator = toolbox_predator.population(n=40)
-        hof_predator = tools.HallOfFame(1)
-        stats_predator = create_stats()
+    toolbox_predator = create_toolbox(pset_predator, pool1, eval_predator)
+    pop_predator = toolbox_predator.population(n=50)
+    hof_predator = tools.HallOfFame(1)
+    stats_predator = create_stats()
+    _, logbook = algorithms.eaSimple(pop_predator, toolbox_predator, 0.5, 0.3, 10, stats_predator, halloffame=hof_predator)
+    best_predator = hof_predator[0]
+    nodes, edges, labels = gp.graph(hof_predator[0])
+    plot_tree(nodes, edges, labels)
+    show_behaviour()
 
-        if best_prey is None:
-            _, logbook = algorithms.eaSimple(pop_prey, toolbox_prey, 0.5, 0.2, 5, stats_prey, halloffame=hof_prey)
-            best_prey = hof_prey[0]
-            nodes, edges, labels = gp.graph(hof_prey[0])
-            plot_tree(nodes, edges, labels)
 
-        _, logbook = algorithms.eaSimple(pop_predator, toolbox_predator, 0.5, 0.6, 5, stats_predator, halloffame=hof_predator)
-        best_predator = hof_predator[0]
-        nodes, edges, labels = gp.graph(hof_predator[0])
-        plot_tree(nodes, edges, labels)
+    # for i in range(3):
+    #     toolbox_prey = create_toolbox(pset_prey, pool1, eval_prey)
+    #     if pop_prey is None: 
+    #         pop_prey = toolbox_prey.population(n=10)
+    #     hof_prey = tools.HallOfFame(1)
+    #     stats_prey = create_stats()
 
-        show_behaviour()
+    #     toolbox_predator = create_toolbox(pset_predator, pool2, eval_predator)
+    #     if pop_predator is None: 
+    #         pop_predator = toolbox_predator.population(n=60)
+    #     hof_predator = tools.HallOfFame(1)
+    #     stats_predator = create_stats()
+
+    #     if best_prey is None:
+    #         _, logbook = algorithms.eaSimple(pop_prey, toolbox_prey, 0.5, 0.2, 5, stats_prey, halloffame=hof_prey)
+    #         best_prey = hof_prey[0]
+    #         nodes, edges, labels = gp.graph(hof_prey[0])
+    #         plot_tree(nodes, edges, labels)
+
+    #     _, logbook = algorithms.eaSimple(pop_predator, toolbox_predator, 0.5, 0.3, 10, stats_predator, halloffame=hof_predator)
+    #     best_predator = hof_predator[0]
+    #     nodes, edges, labels = gp.graph(hof_predator[0])
+    #     plot_tree(nodes, edges, labels)
+
+    #     show_behaviour()

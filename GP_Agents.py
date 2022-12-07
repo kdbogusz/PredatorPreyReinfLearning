@@ -4,7 +4,7 @@ from GrassAgent import Grass
 
 def von_neumann_neighborhood(n):
      neighborhood = [[(n,i), (-n,i), (i,n), (i,-n)] for i in range(-n,n+1)]
-     return set(list(itertools.chain(*neighborhood)))
+     return sorted(list(set(list(itertools.chain(*neighborhood)))))
 
 class Prey:
     ptype = -1  # 1 if predator, -1 for prey
@@ -29,45 +29,47 @@ class Prey:
         self.hunger_minimum = hunger_minimum
         self.q = 0
         self.tree_function = tree_function
+    
+    def in_grid(self, matrix, location):
+         return  -1 < location[0] < matrix.xDim and -1 < location[1] < matrix.yDim
+
+    def predator_distance(self, matrix, location):
+        for r in range(1,4):
+            for dx, dy in von_neumann_neighborhood(r):
+                new_location = [location[0] + dx, location[1] + dy]
+                if self.in_grid(matrix, new_location):
+                    for entity in matrix.grid[new_location[0]][new_location[1]]:
+                        if entity.ptype == 1:
+                            return r
+        return matrix.xDim
 
     def pick_action(self, matrix, print_move):
         """
         Perform action (i.e. movement) of the agent depending on its evaluations
         """
         grass_nearby = False
-        predator_nearby = False
-        on_grass = False
         grass_location = None
         furthest_from_predator_location = None
         own_location = np.array([self.x_position, self.y_position])
-        for dx in [-1, 0, 1]:
-            for dy in [-1, 0, 1]:
-                if dx == 0 and dy == 0:
-                    for entity in matrix.grid[self.x_position + dx][self.y_position + dy]:
-                        if entity.ptype == 0:
-                            on_grass = True
-                if not (dx == 0 and dy == 0) and -1 < self.x_position + dx < matrix.xDim and -1 < self.y_position + dy < matrix.yDim:
-                    for entity in matrix.grid[self.x_position + dx][self.y_position + dy]:
-                        if entity.ptype == 0:
-                            grass_nearby = True
-                            grass_location = np.array([self.x_position + dx, self.y_position + dy])
-                        if entity.ptype == 1:
-                            predator_nearby = True
-                            predator_location = np.array([self.x_position + dx, self.y_position + dy])
-                            if -1 < self.x_position - dx < matrix.xDim and -1 < self.y_position - dy < matrix.yDim:
-                                furthest_from_predator_location = np.array([self.x_position - dx, self.y_position - dy])
-                            elif -1 < self.x_position - dx < matrix.xDim:
-                                furthest_from_predator_location = np.array([self.x_position - dx, self.y_position])
-                            elif -1 < self.y_position - dy < matrix.xDim:
-                                furthest_from_predator_location = np.array([self.x_position, self.y_position - dy])
-                            else:
-                                furthest_from_predator_location = own_location
-
-        if self.tree_function is None:
-            return own_location, -1, 0
-
-        # print(self.tree_function)
-        result = self.tree_function(on_grass, grass_nearby, predator_nearby, self.lastAte > (self.hunger_minimum // 2), self.age >= self.reproduction_age)
+        location_predator_min_distance = self.predator_distance(matrix, own_location)
+        furthest_from_predator_location = own_location
+        on_grass = False
+        for entity in matrix.grid[own_location[0]][own_location[1]]:
+            if entity.ptype == 0:
+                on_grass = True 
+                break
+        for dx, dy in von_neumann_neighborhood(1):
+            new_location = [self.x_position + dx, self.y_position + dy]
+            if self.in_grid(matrix, new_location):
+                for entity in matrix.grid[new_location[0]][new_location[1]]:
+                    if entity.ptype == 0:
+                        grass_nearby = True
+                        grass_location = np.array(new_location)
+                location_predator_distance = self.predator_distance(matrix, new_location)
+                if location_predator_distance < location_predator_min_distance:
+                    location_predator_min_distance = location_predator_distance
+                    furthest_from_predator_location = new_location
+        result = self.tree_function(on_grass, grass_nearby, location_predator_min_distance < 4, self.lastAte > (self.hunger_minimum // 2), self.age >= self.reproduction_age)
         if print_move:
             print(result)
         if result == 'go_from_predator':
@@ -167,6 +169,8 @@ class Predator:
                                     prey_nearby = True
                                 prey_location = new_location.copy()
                                 break
+                if prey_location: 
+                    break
 
         if self.tree_function is None:
             return own_location, -1, 0
@@ -182,11 +186,14 @@ class Predator:
             # print(prey_location)
             if prey_location is None:
                 return own_location, -1, 0
-            x = prey_location[0] - own_location[0]
-            x = x if x == 0 else x // abs(x)
-            y = prey_location[1] - own_location[1]
-            y = y if y == 0 else y // abs(y)
-            return own_location + np.array([x, y]), -1, 0
+            if prey_location[0] == own_location[0] and prey_location[1] == own_location[1]:
+                result = "eat"
+            else:
+                x = prey_location[0] - own_location[0]
+                x = x if x == 0 else x // abs(x)
+                y = prey_location[1] - own_location[1]
+                y = y if y == 0 else y // abs(y)
+                return own_location + np.array([x, y]), -1, 0
         if result == "eat":
             return own_location, self.Eat(matrix.grid[self.x_position][self.y_position]), 0
         if result == "reproduce":

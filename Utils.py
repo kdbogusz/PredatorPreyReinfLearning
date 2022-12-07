@@ -38,7 +38,7 @@ def create_pset(terminals, args):
     for terminal in terminals: pset.addTerminal(terminal)
     return pset
 
-def create_toolbox(pset, pool, suffix, eval_fn):
+def create_toolbox(pset, pool, eval_fn):
     toolbox = base.Toolbox()
     toolbox.register("map", pool.map)
 
