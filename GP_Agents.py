@@ -1,7 +1,10 @@
 import numpy as np
-
+import itertools
 from GrassAgent import Grass
 
+def von_neumann_neighborhood(n):
+     neighborhood = [[(n,i), (-n,i), (i,n), (i,-n)] for i in range(-n,n+1)]
+     return set(list(itertools.chain(*neighborhood)))
 
 class Prey:
     ptype = -1  # 1 if predator, -1 for prey
@@ -149,65 +152,22 @@ class Predator:
         prey_nearby = False
         prey_location = None
         own_location = np.array([self.x_position, self.y_position])
-
-        for distance in range(min(max(matrix.xDim, matrix.yDim), 16)):
-            if prey_location is not None:
+        for entity in matrix.grid[own_location[0]][own_location[1]]:
+            if entity.ptype == -1:
+                prey_nearby = True
+                prey_location = own_location.copy()
                 break
-
-            current_position = np.array([self.x_position - distance, self.y_position - distance])
-
-            while prey_location is None:
-                # print(own_location, current_position, distance)
-                if -1 < current_position[0] < matrix.xDim and -1 < current_position[1] < matrix.yDim:
-                    # print(current_position)
-                    for entity in matrix.grid[current_position[0]][current_position[1]]:
-                        # print(entity.ptype)
-                        if entity.ptype == -1:
-                            if distance == 1:
-                                prey_nearby = True
-                            prey_location = current_position.copy()
-                            break
-
-                if distance == 0:
-                    break
-
-                if current_position[1] == self.y_position - distance:
-                    if current_position[0] == self.x_position + distance:
-                        current_position[1] += 1
-                    elif current_position[0] < 0:
-                        current_position[0] = 0
-                    elif current_position[0] >= matrix.xDim:
-                        current_position[0] = self.x_position + distance
-                    else:
-                        current_position[0] += 1
-                elif current_position[0] == self.x_position + distance:
-                    if current_position[1] == self.y_position + distance:
-                        current_position[0] -= 1
-                    elif current_position[1] < 0:
-                        current_position[1] = 0
-                    elif current_position[1] >= matrix.yDim:
-                        current_position[1] = self.y_position + distance
-                    else:
-                        current_position[1] += 1
-                elif current_position[1] == self.y_position + distance:
-                    if current_position[0] == self.x_position - distance:
-                        current_position[1] -= 1
-                    elif current_position[0] >= matrix.xDim:
-                        current_position[0] = matrix.xDim - 1
-                    elif current_position[0] < 0:
-                        current_position[0] = self.x_position - distance
-                    else:
-                        current_position[0] -= 1
-                else:
-                    if current_position[1] >= matrix.yDim:
-                        current_position[1] = matrix.yDim - 1
-                    elif current_position[1] < 0:
-                        current_position[1] = self.y_position - distance
-                    else:
-                        current_position[1] -= 1
-
-                if current_position[0] == self.x_position - distance and current_position[1] == self.y_position - distance:
-                    break
+        if prey_location is None:
+            for r in range(1,10):
+                for dx, dy in von_neumann_neighborhood(r):
+                    new_location = [own_location[0] + dx, own_location[1] + dy]
+                    if -1 < new_location[0] < matrix.xDim and -1 < new_location[1] < matrix.yDim:
+                        for entity in matrix.grid[new_location[0]][new_location[1]]:
+                            if entity.ptype == -1:
+                                if r < 3:
+                                    prey_nearby = True
+                                prey_location = new_location.copy()
+                                break
 
         if self.tree_function is None:
             return own_location, -1, 0
@@ -215,7 +175,8 @@ class Predator:
         result = self.tree_function(prey_nearby,
                                     self.lastAte > (self.hunger_minimum // 2),
                                     self.age >= self.reproduction_age,
-                                    prey_location is not None and prey_location[0] == own_location[0] and prey_location[1] == own_location[1])
+                                    prey_location is not None and prey_location[0] == own_location[0] and prey_location[1] == own_location[1],
+                )
         if print_move:
             print(result)
         if result == 'go_to_prey':
