@@ -8,11 +8,11 @@ from GP_Agents import Prey, Predator
 from matplotlib import pyplot as plt
 
 
-def run_simulation(prey_function, pred_function, print_move=False):
+def run_simulation(prey_function, pred_function, print_move=False, draw_grid=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--gridDim', default=50, type=int, help='Size of the grid')
-    parser.add_argument('--nPredators', default=200, type=int, help='Number of initial predators')
-    parser.add_argument('--nPrey', default=800, type=int, help='Number of initial preys')
+    parser.add_argument('--nPredators', default=400, type=int, help='Number of initial predators')
+    parser.add_argument('--nPrey', default=1500, type=int, help='Number of initial preys')
     parser.add_argument('--nGrass', default=1600, type=int, help='Number of initial grass')
     parser.add_argument('--learningRate', default=0.05, type=int, help='learning rate of RL')
     parser.add_argument('--discountFactor', default=1, type=int, help='Discount factor of RL')
@@ -66,6 +66,7 @@ def run_simulation(prey_function, pred_function, print_move=False):
                 grassRepRate, grassConsRate, prey_function, pred_function, print_move)
 
     for i in range(1, numLearningIterations):
+        if draw_grid: grid.draw()
         numAgents = grid.update(True, i, ["prey"])
         preyV.append(numAgents[0])
         predV.append(numAgents[1])
@@ -80,6 +81,7 @@ def run_simulation(prey_function, pred_function, print_move=False):
     i = numLearningIterations
 
     while numAgents[0] > 0 and i <= totalNumIterations:
+        if draw_grid: grid.draw()
         numAgents = grid.update(False, i, ["prey"])
         i += 1
         preyV.append(numAgents[0])
@@ -90,8 +92,8 @@ def run_simulation(prey_function, pred_function, print_move=False):
         preyLastAteV.append(preyLastAteP)
         ratioV.append(ratio)
 
-    return sum(preyV) / 100, sum(predV) / 100
-    # return numAgents[0], numAgents[1]
+    # return sum(preyV) / 100, sum(predV) / 100
+    return numAgents[0], numAgents[1]
 
 
 class Grid:
@@ -174,7 +176,7 @@ class Grid:
                     break
             #Move agents, add eating etc.
             if agentType == 0:               #Predator
-                predLastAte =predLastAte + agent.lastAte
+                predLastAte = predLastAte + agent.lastAte
                 agent.Aging(i)
                 # Moving and learning
                 [newCoordsX, newCoordsY], eatenID, offspring = agent.pick_action(self, self.print_move)
