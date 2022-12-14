@@ -1,135 +1,114 @@
-import numpy as np
 from deap import gp, creator, base, tools, algorithms
-import networkx as nx
-import matplotlib.pyplot as plt
+from Simulation import run_simulation
 import multiprocessing
-from Simulation import fitness_function, run_simulation
-import random
-import pickle
+from Utils import create_pset, create_stats, create_toolbox, plot_logbook, plot_tree
 
-def plot_logbook(logbook):
-    min_values = logbook.select("min")
-    max_values = logbook.select("max")
-    avg_values = logbook.select("avg")
-    std_values = logbook.select("std")
-    epoch_values = np.arange(len(avg_values))
-    plt.errorbar(epoch_values, avg_values, std_values, label="avg +- std", ls='none', capsize=3, fmt='o')
-    plt.plot(epoch_values, min_values, "-o", label="min")
-    plt.plot(epoch_values, max_values, "-o", label="max")
-    plt.legend()
-    plt.show()
+PREY_TERMINALS = [
+    'go_to_food', 
+    'go_from_predator', 
+    'do_nothing', 
+    'eat', 
+    'reproduce'
+]
+PREY_ARGS = [
+    "food_nearby", 
+    "predator_nearby", 
+    "hunger_over_half", 
+    "over_reproduction_age", 
+    "on_grass"
+]
+pset_prey = create_pset(PREY_TERMINALS, PREY_ARGS)
 
-def plot_tree(hall_of_fame_individual):
-    nodes, edges, labels = gp.graph(hall_of_fame_individual)
-    g = nx.Graph()
-    g.add_nodes_from(nodes)
-    g.add_edges_from(edges)
-    pos = nx.nx_pydot.graphviz_layout(g, prog="dot")
-    nx.draw_networkx_nodes(g, pos)
-    nx.draw_networkx_edges(g, pos)
-    nx.draw_networkx_labels(g, pos, labels)
-    plt.show()
+PREDATOR_TERMINALS = [
+    'go_to_prey', 
+    'do_nothing', 
+    'eat', 
+    'reproduce'
+]
+PREDATOR_ARGS = [
+    "prey_nearby", 
+    "hunger_over_half", 
+    "over_reproduction_age", 
+    "caught_prey"
+]
+pset_predator = create_pset(PREDATOR_TERMINALS, PREDATOR_ARGS)
 
-def show_behaviour(best_individual):
-    best_individual_routine = gp.compile(best_individual, pset)
-    run_simulation(best_individual_routine, draw_grid=True)
+best_prey = None
+best_predator = None
 
-def sequence3(input1, input2, input3):
-    for input in [input1, input2, input3]:
-        if input == False:
-            return False
-        elif input == True:
-            continue
-        else:
-            return input
-    return True
-
-def sequence2(input1, input2):
-    for input in [input1, input2]:
-        if input == False:
-            return False
-        elif input == True:
-            continue
-        else:
-            return input
-    return True
-
-def selector2(input1, input2):
-    for input in [input1, input2]:
-        if input == False or input == True:
-            continue
-        else:
-            return input
-    return False
-
-def selector3(input1, input2, input3):
-    for input in [input1, input2, input3]:
-        if input == False or input == True:
-            continue
-        else:
-            return input
-    return False
-
-pset = gp.PrimitiveSet("main", 5)
-pset.addPrimitive(sequence2, 2)
-pset.addPrimitive(sequence3, 3)
-pset.addPrimitive(selector2, 2)
-pset.addPrimitive(selector3, 3)
-pset.renameArguments(ARG0="food_nearby")
-pset.renameArguments(ARG1="predator_nearby")
-pset.renameArguments(ARG2="hunger_over_half")
-pset.renameArguments(ARG3="over_reproduction_age")
-pset.renameArguments(ARG4="cell_with_food")
-pset.addTerminal('go_to_food')
-pset.addTerminal('go_from_predator')
-pset.addTerminal('do_nothing')
-pset.addTerminal('eat')
-pset.addTerminal('reproduce')
+pop_prey = None
+pop_predator = None
 
 def eval_prey(individual):
-    routine = gp.compile(individual, pset)
-
-    res = fitness_function(routine)
-
+    routine = gp.compile(individual, pset_prey)
+    predator_routine = gp.compile(best_predator, pset_predator)
+    _, res = run_simulation(routine, predator_routine)
     return res,
+
+def eval_predator(individual):
+    routine = gp.compile(individual, pset_predator)
+    prey_routine = gp.compile(best_prey, pset_prey)
+    res, _ = run_simulation(prey_routine, routine)
+    return res,
+
+def show_behaviour():
+    prey_routine = gp.compile(best_prey, pset_prey)
+    predator_routine = gp.compile(best_predator, pset_predator)
+    run_simulation(prey_routine, predator_routine, draw_grid=True)
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
-toolbox = base.Toolbox()
-toolbox.register("expr_init", gp.genFull, pset=pset, min_=1, max_=3)
-
-toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr_init)
-toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-toolbox.register("evaluate", eval_prey)
-toolbox.register("select", tools.selTournament, tournsize=3)
-toolbox.register("mate", gp.cxOnePoint)
-toolbox.register("expr_mut", gp.genFull, min_=1, max_=3)
-toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
-
-def read_checkpoint(filename):
-    with open(filename, "rb") as cp_file:
-        cp = pickle.load(cp_file)
-    return cp
 
 if __name__ == '__main__':
-    EPOCHS_COUNT = 50
-    POPULATION_SIZE = 30
+
+    prey_logs = []
+    predator_logs = []
     cpu_count = multiprocessing.cpu_count()
-    pool = multiprocessing.Pool(cpu_count)
-    toolbox.register("map", pool.map)
-    stats = tools.Statistics(lambda ind: ind.fitness.values)
-    stats.register("avg", np.mean)
-    stats.register("std", np.std)
-    stats.register("min", np.min)
-    stats.register("max", np.max)
-    number_of_seeds = 1
-    results = {}
-    pop = toolbox.population(n=POPULATION_SIZE)
-    hof = tools.HallOfFame(3)
-    _, logbook = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, EPOCHS_COUNT, stats, halloffame=hof)
-    avg_values = logbook.select("avg")
-    plot_logbook(logbook)
-    plot_tree(hof[0])
-    cp = dict(halloffame=hof, logbook=logbook)
-    with open(f"checkpoints/checkpoint_{EPOCHS_COUNT}_{POPULATION_SIZE}.pkl", "wb") as cp_file:
-        pickle.dump(cp, cp_file)
+    pool1 = multiprocessing.Pool(cpu_count)
+    pool2 = multiprocessing.Pool(cpu_count // 2)
+
+    toolbox_prey = create_toolbox(pset_prey, pool1, eval_prey)
+    pop_prey = toolbox_prey.population(n=10)
+    hof_prey = tools.HallOfFame(1)
+    stats_prey = create_stats()
+    _, logbook = algorithms.eaSimple(pop_prey, toolbox_prey, 0.5, 0.2, 5, stats_prey, halloffame=hof_prey)
+    best_prey = hof_prey[0]
+    nodes, edges, labels = gp.graph(hof_prey[0])
+    plot_tree(nodes, edges, labels)
+
+    toolbox_predator = create_toolbox(pset_predator, pool1, eval_predator)
+    pop_predator = toolbox_predator.population(n=50)
+    hof_predator = tools.HallOfFame(1)
+    stats_predator = create_stats()
+    _, logbook = algorithms.eaSimple(pop_predator, toolbox_predator, 0.5, 0.3, 10, stats_predator, halloffame=hof_predator)
+    best_predator = hof_predator[0]
+    nodes, edges, labels = gp.graph(hof_predator[0])
+    plot_tree(nodes, edges, labels)
+    show_behaviour()
+
+
+    # for i in range(3):
+    #     toolbox_prey = create_toolbox(pset_prey, pool1, eval_prey)
+    #     if pop_prey is None: 
+    #         pop_prey = toolbox_prey.population(n=10)
+    #     hof_prey = tools.HallOfFame(1)
+    #     stats_prey = create_stats()
+
+    #     toolbox_predator = create_toolbox(pset_predator, pool2, eval_predator)
+    #     if pop_predator is None: 
+    #         pop_predator = toolbox_predator.population(n=60)
+    #     hof_predator = tools.HallOfFame(1)
+    #     stats_predator = create_stats()
+
+    #     if best_prey is None:
+    #         _, logbook = algorithms.eaSimple(pop_prey, toolbox_prey, 0.5, 0.2, 5, stats_prey, halloffame=hof_prey)
+    #         best_prey = hof_prey[0]
+    #         nodes, edges, labels = gp.graph(hof_prey[0])
+    #         plot_tree(nodes, edges, labels)
+
+    #     _, logbook = algorithms.eaSimple(pop_predator, toolbox_predator, 0.5, 0.3, 10, stats_predator, halloffame=hof_predator)
+    #     best_predator = hof_predator[0]
+    #     nodes, edges, labels = gp.graph(hof_predator[0])
+    #     plot_tree(nodes, edges, labels)
+
+    #     show_behaviour()
