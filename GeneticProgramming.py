@@ -2,6 +2,9 @@ from deap import gp, creator, base, tools, algorithms
 from Simulation import run_simulation
 import multiprocessing
 from Utils import create_pset, create_stats, create_toolbox, plot_logbook, plot_tree
+import numpy as np
+
+USE_LOTKA_VOLTERRA_AS_TARGET = True
 
 PREY_TERMINALS = [
     'go_to_food', 
@@ -51,6 +54,55 @@ def eval_predator(individual):
     res, _ = run_simulation(prey_routine, routine)
     return res,
 
+def lotka_volterra(x, y, length):
+    xs = [x]
+    ys = [y]
+
+    alpha = (8 / 25) / 4 - 1 / 16
+    beta = 1 / 50 ** 3
+    gamma = 1 / 50 ** 3
+    delta = 1 / 64
+
+    timestep = 0.01
+
+    steps = int(length / timestep)
+    inverse_timestep = int(1 / timestep)
+
+    for i in range(steps):
+        dx = alpha * x - beta * x * y
+        dy = gamma * x * y - delta * y
+
+        x = x + dx * timestep
+        y = y + dy * timestep
+
+        if (i + 1) % inverse_timestep == 0 and len(xs) < length:
+            xs.append(x)
+            ys.append(y)
+
+    return xs, ys
+
+def eval_prey_lv(individual):
+    routine = gp.compile(individual, pset_prey)
+    predator_routine = gp.compile(best_predator, pset_predator)
+    prey_counts, pred_counts = run_simulation(routine, predator_routine, lotka_volterra=True)
+    correct_prey, correct_pred = lotka_volterra(prey_counts[0], pred_counts[0], len(prey_counts))
+
+    mse = (np.square(np.array(prey_counts) - np.array(correct_prey))).mean() + \
+          (np.square(np.array(pred_counts) - np.array(correct_pred))).mean()\
+
+    return -mse,
+
+def eval_predator_lv(individual):
+    routine = gp.compile(individual, pset_predator)
+    prey_routine = gp.compile(best_prey, pset_prey)
+    prey_counts, pred_counts = run_simulation(prey_routine, routine, lotka_volterra=True)
+    correct_prey, correct_pred = lotka_volterra(prey_counts[0], pred_counts[0], len(prey_counts))
+
+    mse = (np.square(np.array(prey_counts) - np.array(correct_prey))).mean() + \
+          (np.square(np.array(pred_counts) - np.array(correct_pred))).mean()\
+
+    return -mse,
+
 def show_behaviour():
     prey_routine = gp.compile(best_prey, pset_prey)
     predator_routine = gp.compile(best_predator, pset_predator)
@@ -67,7 +119,7 @@ if __name__ == '__main__':
     pool1 = multiprocessing.Pool(cpu_count)
     pool2 = multiprocessing.Pool(cpu_count // 2)
 
-    toolbox_prey = create_toolbox(pset_prey, pool1, eval_prey)
+    toolbox_prey = create_toolbox(pset_prey, pool1, eval_prey_lv if USE_LOTKA_VOLTERRA_AS_TARGET else eval_prey)
     pop_prey = toolbox_prey.population(n=10)
     hof_prey = tools.HallOfFame(1)
     stats_prey = create_stats()
@@ -76,7 +128,7 @@ if __name__ == '__main__':
     nodes, edges, labels = gp.graph(hof_prey[0])
     plot_tree(nodes, edges, labels)
 
-    toolbox_predator = create_toolbox(pset_predator, pool1, eval_predator)
+    toolbox_predator = create_toolbox(pset_predator, pool1, eval_predator_lv if USE_LOTKA_VOLTERRA_AS_TARGET else eval_predator)
     pop_predator = toolbox_predator.population(n=50)
     hof_predator = tools.HallOfFame(1)
     stats_predator = create_stats()

@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 def fitness_function(prey_function):
     return np.mean([run_simulation(prey_function) for _ in range(3)])
 
-def run_simulation(prey_function, pred_function, print_move=False, draw_grid=False):
+def run_simulation(prey_function, pred_function, print_move=False, draw_grid=False, lotka_volterra=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--gridDim', default=50, type=int, help='Size of the grid')
     parser.add_argument('--nPredators', default=400, type=int, help='Number of initial predators')
@@ -98,6 +98,9 @@ def run_simulation(prey_function, pred_function, print_move=False, draw_grid=Fal
         preyLastAteV.append(preyLastAteP)
         ratioV.append(ratio)
         all_epochs_num_agents.append(numAgents.copy())
+
+    if lotka_volterra:
+        return preyV, predV
 
     fitness = lambda values: sum([((i+1)**2) * value / 400 for i, value in enumerate(values[-20:])])
     return fitness(preyV), fitness(predV)
