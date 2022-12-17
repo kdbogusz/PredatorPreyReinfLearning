@@ -2,7 +2,8 @@ import numpy as np
 from deap import gp, creator, base, tools, algorithms
 import networkx as nx
 import matplotlib.pyplot as plt
-from FlowOperators import sequence2, sequence3, selector2, selector3
+from FlowOperators import sequence2, sequence3, selector2, selector3, TreeNode, carry
+
 
 def plot_logbook(logbook):
     min_values = logbook.select("min")
@@ -27,15 +28,17 @@ def plot_tree(nodes, edges, labels):
     plt.show()
 
 def create_pset(terminals, args):
-    pset = gp.PrimitiveSet("main", len(terminals))
-    pset.addPrimitive(sequence2, 2)
-    pset.addPrimitive(sequence3, 3)
-    pset.addPrimitive(selector2, 2)
-    pset.addPrimitive(selector3, 3)
+    pset = gp.PrimitiveSetTyped("main", [bool, bool, bool, bool, bool], TreeNode)
+    pset.addPrimitive(sequence2, [bool, TreeNode], TreeNode)
+    pset.addPrimitive(sequence3, [bool, bool, TreeNode], TreeNode)
+    pset.addPrimitive(selector2, [TreeNode, TreeNode], TreeNode)
+    pset.addPrimitive(selector3, [TreeNode, TreeNode, TreeNode], TreeNode)
+    pset.addPrimitive(carry, [bool], bool)
     deap_args = [f"ARG{i}" for i in range(len(args))]
     kargs = {k: v for k, v in zip(deap_args, args)}
     pset.renameArguments(**kargs)
-    for terminal in terminals: pset.addTerminal(terminal)
+    for terminal in terminals:
+        pset.addTerminal(TreeNode(action=terminal, success=True), TreeNode)
     return pset
 
 def create_toolbox(pset, pool, eval_fn):
