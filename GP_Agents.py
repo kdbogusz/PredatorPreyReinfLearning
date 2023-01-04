@@ -69,7 +69,8 @@ class Prey:
                 if location_predator_distance < location_predator_min_distance:
                     location_predator_min_distance = location_predator_distance
                     furthest_from_predator_location = new_location
-        result = self.tree_function(on_grass, grass_nearby, location_predator_min_distance < 4, self.lastAte > (self.hunger_minimum // 2), self.age >= self.reproduction_age)
+        result = self.tree_function(grass_nearby, location_predator_min_distance < 4, self.lastAte < (self.hunger_minimum // 2), self.age >= self.reproduction_age, on_grass)
+
         if print_move:
             print(result)
         if result == 'go_from_predator':
@@ -113,7 +114,7 @@ class Prey:
         offspring = 0
         food_in_stomach = self.hunger_minimum - self.lastAte
         offspring_food = food_in_stomach // 2
-        if self.age >= self.reproduction_age and self.lastAte < (self.hunger_minimum / 2):
+        if self.age >= self.reproduction_age and self.lastAte < (self.hunger_minimum // 2):
             self.lastAte = self.hunger_minimum - food_in_stomach + offspring_food
             offspring = Prey(self.x_position, self.y_position, -1, self.hunger_minimum - offspring_food, self.ID, self.reproduction_age,
                              self.death_rate, self.reproduction_rate, self.weights, self.learning_rate,
@@ -176,14 +177,13 @@ class Predator:
             return own_location, -1, 0
 
         result = self.tree_function(prey_nearby,
-                                    self.lastAte > (self.hunger_minimum // 2),
+                                    self.lastAte < (self.hunger_minimum // 2),
                                     self.age >= self.reproduction_age,
                                     prey_location is not None and prey_location[0] == own_location[0] and prey_location[1] == own_location[1],
                 )
         if print_move:
             print(result)
         if result == 'go_to_prey':
-            # print(prey_location)
             if prey_location is None:
                 return own_location, -1, 0
             if prey_location[0] == own_location[0] and prey_location[1] == own_location[1]:
@@ -207,9 +207,7 @@ class Predator:
 
     def Eat(self, agentListAtMatrixPos):
         for agent in agentListAtMatrixPos:
-            # print(type(agent))
             if type(agent) is Prey:  # Not selected randomly at the moment, just eats the first prey in the list
-                # print(agent.ID)
                 self.lastAte = 0
                 return agent.ID
         return -1
@@ -226,7 +224,7 @@ class Predator:
         offspring = 0
         food_in_stomach = self.hunger_minimum - self.lastAte
         offspring_food = food_in_stomach // 2
-        if self.age >= self.reproduction_age and self.lastAte < (self.hunger_minimum / 2):
+        if self.age >= self.reproduction_age and self.lastAte < (self.hunger_minimum // 2):
             self.lastAte = self.hunger_minimum - food_in_stomach + offspring_food
             offspring = Predator(self.x_position, self.y_position, -1, self.hunger_minimum - offspring_food, self.ID, self.reproduction_age,
                                  self.death_rate, self.reproduction_rate, self.weights, self.learning_rate,

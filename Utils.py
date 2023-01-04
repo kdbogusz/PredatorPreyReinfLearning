@@ -40,7 +40,7 @@ def create_pset(terminals, args):
 
 def create_toolbox(pset, pool, eval_fn):
     toolbox = base.Toolbox()
-    toolbox.register("map", pool.map)
+    # toolbox.register("map", pool.map)
 
     toolbox.register(f"expr_init", gp.genFull, pset=pset, min_=1, max_=3)
     toolbox.register(f"individual", tools.initIterate, creator.Individual, toolbox.expr_init)
