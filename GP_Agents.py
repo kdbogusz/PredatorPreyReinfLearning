@@ -52,6 +52,7 @@ class Prey:
         furthest_from_predator_location = None
         own_location = np.array([self.x_position, self.y_position])
         location_predator_min_distance = self.predator_distance(matrix, own_location)
+        location_predator_max_distance = self.predator_distance(matrix, own_location)
         furthest_from_predator_location = own_location
         on_grass = False
         for entity in matrix.grid[own_location[0]][own_location[1]]:
@@ -66,9 +67,11 @@ class Prey:
                         grass_nearby = True
                         grass_location = np.array(new_location)
                 location_predator_distance = self.predator_distance(matrix, new_location)
+                if location_predator_distance > location_predator_max_distance:
+                    location_predator_max_distance = location_predator_distance
+                    furthest_from_predator_location = new_location
                 if location_predator_distance < location_predator_min_distance:
                     location_predator_min_distance = location_predator_distance
-                    furthest_from_predator_location = new_location
         result = self.tree_function(grass_nearby, location_predator_min_distance < 4, self.lastAte < (self.hunger_minimum // 2), self.age >= self.reproduction_age, on_grass)
 
         if print_move:
