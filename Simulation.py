@@ -13,7 +13,7 @@ def fitness_function(prey_function):
 def run_simulation(prey_function, pred_function, print_move=False, draw_grid=False, lotka_volterra=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--gridDim', default=50, type=int, help='Size of the grid')
-    parser.add_argument('--nPredators', default=50, type=int, help='Number of initial predators')
+    parser.add_argument('--nPredators', default=35, type=int, help='Number of initial predators')
     parser.add_argument('--nPrey', default=1200, type=int, help='Number of initial preys')
     parser.add_argument('--nGrass', default=1600, type=int, help='Number of initial grass')
     parser.add_argument('--learningRate', default=0.05, type=int, help='learning rate of RL')
@@ -153,18 +153,6 @@ class Grid:
             self.grid[x][y].append(prey)
             self.agentList.append([self.ID, x, y, 1])
             self.ID += 1
-        for i in range(nGrass):
-            x = random.randint(0, xDim - 1)
-            y = random.randint(0, yDim - 1)
-            while self.grassGrid[x][y] == 1:
-                x = random.randint(0, xDim - 1)
-                y = random.randint(0, yDim - 1)
-            grass = Grass(x, y, self.grassRepRate, self.grassConsRate)
-            grass.ID = self.ID
-            self.grid[x][y].append(grass)
-            self.grassGrid[x][y] = 1
-            self.agentList.append([self.ID, x, y, 2])
-            self.ID += 1
 
     def update(self, learning, i, simulated_agents):
         random.shuffle(self.agentList)
@@ -281,20 +269,6 @@ class Grid:
                     self.grid[x][y].append(offspring)
                     self.agentList.append([self.ID, x, y, 1])
                     self.ID += 1
-
-            elif agentType == 2:
-                offspring = agent.update()
-                if offspring != 0:
-                    offspring.ID = self.ID
-                    coords = self.getGrassCoords(x, y)
-                    if coords != 0:
-                        offspring.x = coords[0]
-                        offspring.y = coords[1]
-                        self.grassGrid[coords[0]][coords[1]] = 1
-                        self.numGrass += 1
-                        self.grid[np.mod(offspring.x, self.xDim)][np.mod(offspring.y, self.yDim)].append(offspring)
-                        self.agentList.append([self.ID, np.mod(offspring.x, self.xDim), np.mod(offspring.y, self.yDim), 2])
-                        self.ID += 1
         if self.preyDeaths != 0:
             preyDeathAvg = self.preyDeathAge / self.preyDeaths
         else:

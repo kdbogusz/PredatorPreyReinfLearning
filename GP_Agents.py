@@ -93,7 +93,6 @@ class Prey:
             self.learning_rate = 0.05 - 0.0001 * (i - 1)
         else:
             self.learning_rate = 0
-        self.lastAte += 1
         return
 
     def Eat(self, agentListAtMatrixPos):
@@ -106,11 +105,6 @@ class Prey:
         return -1
 
     def Starve(self):
-        if self.lastAte > self.hunger_minimum:
-            pdeath = self.lastAte * self.death_rate
-            r = np.random.rand()
-            if r < pdeath:
-                return self.ID
         return -1
 
     def Reproduce(self):
